@@ -1,0 +1,5 @@
+{
+    "name": "Socket Save Fix",
+    "dll": "SocketSaveFix.dll",
+    "enabled": true
+}

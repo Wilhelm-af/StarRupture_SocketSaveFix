@@ -1,0 +1,45 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install MinGW
+        run: sudo apt-get update && sudo apt-get install -y mingw-w64 cmake
+
+      - name: Build
+        run: |
+          mkdir build && cd build
+          cmake -DCMAKE_SYSTEM_NAME=Windows \
+                -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
+                -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
+                -DCMAKE_BUILD_TYPE=Release ..
+          make -j$(nproc)
+
+      - name: Package
+        run: |
+          mkdir -p release/SocketSaveFix
+          cp build/SocketSaveFix.dll release/SocketSaveFix/
+          cp mod.json release/SocketSaveFix/
+          cd release && zip -r ../SocketSaveFix.zip SocketSaveFix/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SocketSaveFix
+          path: release/SocketSaveFix/
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: SocketSaveFix.zip
+          generate_release_notes: true
