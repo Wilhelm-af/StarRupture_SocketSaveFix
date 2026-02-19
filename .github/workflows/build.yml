@@ -32,6 +32,7 @@ jobs:
           mkdir -p release/SocketSaveFix
           cp build/SocketSaveFix.dll release/SocketSaveFix/
           cp mod.json release/SocketSaveFix/
+          cp socket_save_fix.ini release/SocketSaveFix/
           cd release && zip -r ../SocketSaveFix.zip SocketSaveFix/
 
       - name: Upload artifact
