@@ -19,6 +19,50 @@ extern void LogMsg(const char* fmt, ...);
 //   <8-byte address>
 static constexpr size_t ABS_JMP_SIZE = 14;
 
+// Allocate executable memory within ±2GB of 'nearAddr' so that E8 (call rel32)
+// fixups in the trampoline can reach the original call targets.
+static void* AllocateNear(uintptr_t nearAddr, size_t size) {
+    // Search in 64KB-aligned steps within ±0x7FFF0000 (~2GB) of nearAddr
+    const uintptr_t RANGE = 0x7FFF0000ULL;
+    const uintptr_t ALIGN = 0x10000ULL;  // 64KB allocation granularity
+
+    uintptr_t lo = (nearAddr > RANGE) ? (nearAddr - RANGE) : 0x10000;
+    uintptr_t hi = nearAddr + RANGE;
+
+    // Round lo up to alignment
+    lo = (lo + ALIGN - 1) & ~(ALIGN - 1);
+
+    // Search upward from the target first (more likely to find space above .text)
+    for (uintptr_t addr = nearAddr & ~(ALIGN - 1); addr < hi; addr += ALIGN) {
+        MEMORY_BASIC_INFORMATION mbi;
+        if (VirtualQuery((void*)addr, &mbi, sizeof(mbi)) == 0)
+            continue;
+
+        if (mbi.State == MEM_FREE && mbi.RegionSize >= size) {
+            void* p = VirtualAlloc((void*)addr, size,
+                                   MEM_COMMIT | MEM_RESERVE,
+                                   PAGE_EXECUTE_READWRITE);
+            if (p) return p;
+        }
+    }
+
+    // Search downward
+    for (uintptr_t addr = (nearAddr & ~(ALIGN - 1)) - ALIGN; addr >= lo; addr -= ALIGN) {
+        MEMORY_BASIC_INFORMATION mbi;
+        if (VirtualQuery((void*)addr, &mbi, sizeof(mbi)) == 0)
+            continue;
+
+        if (mbi.State == MEM_FREE && mbi.RegionSize >= size) {
+            void* p = VirtualAlloc((void*)addr, size,
+                                   MEM_COMMIT | MEM_RESERVE,
+                                   PAGE_EXECUTE_READWRITE);
+            if (p) return p;
+        }
+    }
+
+    return nullptr;
+}
+
 bool InstallHook(InlineHook& hook, uintptr_t target, void* detour, size_t stealSize) {
     if (stealSize < ABS_JMP_SIZE) {
         LogMsg("ERROR: stealSize %zu < %zu minimum", stealSize, ABS_JMP_SIZE);
@@ -30,13 +74,12 @@ bool InstallHook(InlineHook& hook, uintptr_t target, void* detour, size_t stealS
     hook.stealSize = stealSize;
     hook.installed = false;
 
-    // --- Allocate trampoline (RWX) ---
+    // --- Allocate trampoline (RWX) near the target for E8 rel32 reach ---
     size_t trampolineSize = stealSize + ABS_JMP_SIZE;
-    hook.trampoline = VirtualAlloc(nullptr, trampolineSize,
-                                   MEM_COMMIT | MEM_RESERVE,
-                                   PAGE_EXECUTE_READWRITE);
+    hook.trampoline = AllocateNear(target, trampolineSize);
     if (!hook.trampoline) {
-        LogMsg("ERROR: VirtualAlloc for trampoline failed (err=%lu)", GetLastError());
+        LogMsg("ERROR: AllocateNear failed — no free memory within ±2GB of 0x%llX",
+               (unsigned long long)target);
         return false;
     }
 
