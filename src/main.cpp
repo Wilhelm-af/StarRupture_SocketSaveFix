@@ -4,6 +4,7 @@
 #include <cstring>
 
 extern bool ApplyPatch();
+extern void CleanupPatch();
 
 // ===================================================================
 // Globals shared with other modules
@@ -80,10 +81,15 @@ static DWORD WINAPI PatchThread(LPVOID param) {
 // DLL entry point
 // ===================================================================
 
-extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID) {
+extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
     if (fdwReason == DLL_PROCESS_ATTACH) {
         DisableThreadLibraryCalls(hinstDLL);
         CreateThread(nullptr, 0, PatchThread, (LPVOID)hinstDLL, 0, nullptr);
+    }
+    else if (fdwReason == DLL_PROCESS_DETACH && lpReserved == nullptr) {
+        // Explicit unload (FreeLibrary) — restore hooks to prevent crashes
+        // during engine teardown.  Skip if lpReserved != nullptr (process exit).
+        CleanupPatch();
     }
     return TRUE;
 }
