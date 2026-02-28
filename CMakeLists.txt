@@ -15,6 +15,7 @@ add_library(SocketSaveFix SHARED
     src/main.cpp
     src/scanner.cpp
     src/patcher.cpp
+    src/hook.cpp
 )
 
 target_link_libraries(SocketSaveFix PRIVATE -lkernel32)

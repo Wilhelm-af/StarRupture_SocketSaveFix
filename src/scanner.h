@@ -5,6 +5,8 @@
 struct ScanResults {
     uintptr_t       guObjectArray;      // Base of GUObjectArray
     FNameToStringFn fnNameToString;     // FName::ToString function pointer
+    uintptr_t       fnOnPostSaveLoaded; // UCrMassSaveSubsystem::OnPostSaveLoaded address
+    SignalEntityFn  fnSignalEntity;     // UMassSignalSubsystem::SignalEntity function pointer
 };
 
 // Scan the main game module for GUObjectArray and FName::ToString.

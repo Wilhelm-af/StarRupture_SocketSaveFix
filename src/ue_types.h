@@ -22,8 +22,9 @@ inline void WriteAt(uintptr_t base, size_t off, T val) {
 //   +0x18  FName    NamePrivate   (8 bytes)
 // ---------------------------------------------------------------------------
 namespace UObjOff {
-    constexpr size_t ClassPrivate = 0x10;
-    constexpr size_t NamePrivate  = 0x18;
+    constexpr size_t ClassPrivate  = 0x10;
+    constexpr size_t NamePrivate   = 0x18;
+    constexpr size_t OuterPrivate  = 0x20;
 }
 
 // ---------------------------------------------------------------------------
@@ -102,8 +103,22 @@ struct FString {
 };
 
 // ---------------------------------------------------------------------------
+// FMassEntityHandle  (8 bytes)
+// ---------------------------------------------------------------------------
+struct FMassEntityHandle {
+    int32_t Index;
+    int32_t SerialNumber;
+};
+
+// ---------------------------------------------------------------------------
 // FName::ToString  —  void __fastcall (const FName* this, FString* out)
 // ---------------------------------------------------------------------------
 // On x64 Windows there is only one calling convention (MS x64 ABI).
 // __fastcall is ignored on x64, so we omit it to avoid MinGW warnings.
 using FNameToStringFn = void (*)(const void* namePtr, FString* out);
+
+// ---------------------------------------------------------------------------
+// UMassSignalSubsystem::SignalEntity
+//   void (UMassSignalSubsystem* this, FName signalName, FMassEntityHandle handle)
+// ---------------------------------------------------------------------------
+using SignalEntityFn = void (*)(void* signalSubsystem, FName signalName, FMassEntityHandle handle);
