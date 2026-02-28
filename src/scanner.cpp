@@ -171,6 +171,18 @@ static bool ReadFallbackConfig(ScanResults& out) {
             LogMsg("  FNameToString = 0x%llX (base + RVA 0x%llX)",
                    (unsigned long long)(g_moduleBase + val), val);
         }
+        // OnPostSaveLoaded RVA
+        if (sscanf(line, "OnPostSaveLoaded_RVA=0x%llx", &val) == 1) {
+            out.fnOnPostSaveLoaded = g_moduleBase + (uintptr_t)val;
+            LogMsg("  OnPostSaveLoaded = 0x%llX (base + RVA 0x%llX)",
+                   (unsigned long long)out.fnOnPostSaveLoaded, val);
+        }
+        // SignalEntity RVA
+        if (sscanf(line, "SignalEntity_RVA=0x%llx", &val) == 1) {
+            out.fnSignalEntity = (SignalEntityFn)(g_moduleBase + (uintptr_t)val);
+            LogMsg("  SignalEntity = 0x%llX (base + RVA 0x%llX)",
+                   (unsigned long long)(g_moduleBase + val), val);
+        }
     }
     fclose(f);
     return out.guObjectArray != 0 && out.fnNameToString != nullptr;
@@ -256,8 +268,10 @@ static const FNTPattern fntPatterns[] = {
 // ===================================================================
 
 bool ScanForEngineSymbols(ScanResults& out) {
-    out.guObjectArray  = 0;
-    out.fnNameToString = nullptr;
+    out.guObjectArray      = 0;
+    out.fnNameToString     = nullptr;
+    out.fnOnPostSaveLoaded = 0;
+    out.fnSignalEntity     = nullptr;
 
     if (!GetMainModule(g_moduleBase, g_moduleSize)) {
         LogMsg("ERROR: Cannot get main module info");

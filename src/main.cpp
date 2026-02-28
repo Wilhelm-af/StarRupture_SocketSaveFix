@@ -60,15 +60,13 @@ static DWORD WINAPI PatchThread(LPVOID param) {
     g_log = fopen(dllPath, "w");
     if (!g_log) return 1;
 
-    LogMsg("=== SocketSaveFix v1.0 ===");
+    LogMsg("=== SocketSaveFix v2.0 ===");
     LogMsg("DLL dir: %s", g_modDir);
     LogMsg("Log:     %s", dllPath);
 
-    // Minimal delay — we need the exe to be mapped but want to patch
-    // BEFORE the Mass Entity subsystem caches fragment savability.
-    // The type system (GUObjectArray) is populated during module static init,
-    // which happens early.  We poll aggressively to patch ASAP.
-    LogMsg("Starting early poll (no initial delay)...");
+    // Wait for the exe module to be fully mapped, then install hooks.
+    // The UObject system needs to be populated before we can resolve symbols.
+    LogMsg("Starting initialization...");
 
     bool ok = ApplyPatch();
 
