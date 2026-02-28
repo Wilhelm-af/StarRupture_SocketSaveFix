@@ -4,4 +4,3 @@ build/
 *.o
 *.exe
 *.log
-*.ini
