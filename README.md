@@ -1,3 +1,9 @@
+# Collaboration :D
+
+So we were two idiots starting at this at the same time, Comming up with idea and such to how to solve problems. After some time now https://github.com/AlienXAXS has made a more "Stable" thought thru modloader with this mod implemented that works for both Client And Server. So with that, im deprecating this project and will help AlienXAXS with his projects to have a more uniformed solution to the users out there.
+
+Makeing it simple for people to select one modloader and one place to find mods for everything instead of having to choose between one and another and or using both. Here is the link to the [ModLoader](https://github.com/AlienXAXS/StarRupture-ModLoader) and ill see you there.
+
 # StarRupture — SocketSaveFix
 
 A mod for StarRupture that fixes broken 3-way and 5-way rail junctions so they save and load
